@@ -1,8 +1,4 @@
-use std::os::unix::fs::FileExt;
-
 use dialoguer::{Input, Select, console::TermFamily::File, theme::ColorfulTheme};
-use flate2::Status::Ok;
-use notify::{Config, Error};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -36,20 +32,22 @@ struct YoruKitToml {
 pub fn creator() {
     use std::result::Result::{Ok, Err};
 
-    let path = match std::env::current_dir() {
-        Ok(actual_path) => actual_path,
-        Err(e) => {
-            eprintln!("Failed to get current directory: {}", e);
-            return;
-        }
-    };
-
     println!("YoruKit Project Creator");
     println!("-----------------------");
 
+    let os = vec![
+        "ios",
+        "macos",
+        "tvos",
+        "watchos",
+        "visionos",
+        "bridgeos <experimental>",
+        "audioos <experimental>",
+    ];
+
     let templates = vec![
-        "iphoneos/test1",
-        "iphoneos/test2"
+        "tweak_objc",
+        "application_objc"
     ];
 
     let selection = Select::with_theme(&ColorfulTheme::default())
@@ -114,7 +112,7 @@ pub fn creator() {
                 Err(e) => eprint!("Error: Failed to format config to TOML: {}", e),
             }
             let plist_path = format!("{}/entitlements.plist", project_name);
-            let default_plist_content = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n</dict>\n</plist>";
+            let default_plist_content = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n<dict>\n\n</dict>\n</plist>";
 
             std::fs::write(&plist_path, default_plist_content)
                 .expect("Error: Failed to create entitlements.plist");
