@@ -1,0 +1,65 @@
+## Phase 1: CLI Core and Configuration
+
+* [ ] Set up clap for CLI routing (yoru init, yoru build, yoru deploy).
+* [ ] Build yoru init to scaffold projects from templates (tweak, tool, cyanide).
+* [ ] Generate default layout directories (src/, layout/) and a boilerplate Yoru.toml.
+* [ ] Implement TOML parser using serde to extract build metadata and target settings.
+
+## Phase 2: Logos Integration and Compiler Bridge
+
+* [ ] Build preprocessor to pass .x and .xm files through the Logos engine.
+* [ ] Dump intermediate .m and .mm files into a hidden build folder (.yoru/build/).
+* [ ] Configure compiler runner to handle target triples (aarch64-apple-ios).
+* [ ] Inject clang flags for arm64e PAC support.
+* [ ] Implement parallel file compilation to speed up build times over Theos.
+
+## Phase 3: Cross-Platform Packaging and Signing
+
+* [ ] Integrate xtool for cross-platform ad-hoc signing and entitlement injection.
+* [ ] Build file layout mapper:
+* Rootless: Route binaries to /var/jb/ Library paths.
+* Rootful: Route binaries to traditional root paths for iOS < 12 compatibility.
+* RootHide: Add hooks for randomized jbroot translation layout.
+
+
+* [ ] Create native .deb archiver that builds control and data tarballs directly.
+* [ ] Auto-generate Debian control files using values parsed from Yoru.toml.
+
+## Phase 4: vphone-cli and Deployment Workflow
+
+* [ ] Build a bridge to detect local running instances of vphone-cli.
+* [ ] Automate pushing and installing the compiled .deb directly into the active VM container.
+* [ ] Implement yoru deploy using an SSH client (ssh2 crate) for physical device transfers.
+* [ ] Automate post-install steps (killall -9 SpringBoard / respring).
+* [ ] Add hot reloading using the notify crate to recompile, package, and deploy on file save.
+
+## Phase 5: Cyanide Implementation
+
+* [ ] Map out Cyanide out-of-process APIs and implement Rust bindings for the remote Objective-C bridge.
+* [ ] Add a dedicated Cyanide workspace template to the yoru init command.
+
+---
+
+### Yoru.toml Format Spec
+
+```toml
+[project]
+name = "MyAwesomeTweak"
+id = "com.you.myawesometweak"
+version = "1.0.0"
+author = "Developer"
+
+[target]
+mode = "rootless" # options: rootless, roothide, rootful, cyanide
+min_ios = "15.0"
+architectures = ["arm64", "arm64e"]
+
+[signing]
+entitlements = "entitlements.plist"
+adhoc = true
+
+[vphone]
+enabled = true
+auto_respring = true
+
+```
