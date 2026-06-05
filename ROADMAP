@@ -50,13 +50,13 @@ version = "1.0.0"
 author = "Developer"
 
 [target]
-mode = "rootless" # options: rootless, roothide, rootful, cyanide
+mode = "rootless" # options: rootless, roothide, rootful, cyanide, nonjb, trollstore, etc
 min_ios = "15.0"
 architectures = ["arm64", "arm64e"]
 
 [signing]
 entitlements = "entitlements.plist"
-adhoc = true
+mode = "none" # adhoc, xtool, developer, cert, none, etc ??
 
 [vphone]
 enabled = true
