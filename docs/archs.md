@@ -30,7 +30,6 @@
 
 ## bridgeOS
 
-* bridgeos-arm7
 * bridgeos-arm64
 
 ## audioOS
