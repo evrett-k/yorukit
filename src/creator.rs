@@ -1,4 +1,4 @@
-use dialoguer::{Input, Select, console::TermFamily::File, theme::ColorfulTheme};
+use dialoguer::{Input, Select, MultiSelect, Confirm, theme::ColorfulTheme};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -35,7 +35,7 @@ pub fn creator() {
     println!("YoruKit Project Creator");
     println!("-----------------------");
 
-    let os = vec![
+    let darwins = vec![
         "ios",
         "macos",
         "tvos",
@@ -46,18 +46,77 @@ pub fn creator() {
     ];
 
     let templates = vec![
-        "tweak_objc",
-        "application_objc"
+        "tweak_c",
+        "application_swift"
     ];
 
-    let selection = Select::with_theme(&ColorfulTheme::default())
+    // darwin
+    let darwin_selection = MultiSelect::with_theme(&ColorfulTheme::default())
+        .with_prompt("Choose OS(es)")
+        .items(&darwins)
+        .interact()
+        .unwrap();
+
+    let chosen_darwins: Vec<&str> = darwin_selection.iter().map(|&i| darwins[i]).collect();
+
+    // arch filtering
+    let arch_display = vec![
+        ("arm64", "arm64"),
+        ("arm64e", "arm64e"),
+        ("arm64_32", "arm64_32"),
+        ("arm7k", "arm (armv7k)"),
+        ("arm7s", "arm (armv7s)"),
+        ("arm", "arm (armv7)"),
+        ("x86_64", "x86_64"),
+    ];
+
+    let os_arch_options: Vec<((&str, &str), String)> = darwins
+        .iter()
+        .filter(|&&os| chosen_darwins.contains(&os))
+        .flat_map(|&os| {
+            let prefix = match os {
+                "ios" => "iphoneos",
+                "macos" => "darwin",
+                "tvos" => "appletvos",
+                "watchos" => "watchos",
+                "visionos" => "xros",
+                "bridgeos <experimental>" => "bridgeos",
+                "audioos <experimental>" => "audioos",
+                _ => os,
+            };
+            arch_display.iter().filter(|(id, _)| {
+                match *id {
+                    "arm" | "arm7s" => os.contains("ios"),
+                    "arm7k" | "arm64_32" => os.contains("watchos"),
+                    "arm64" => true,
+                    "arm64e" => os.contains("ios") || os.contains("macos") || os.contains("tvos") || os.contains("visionos"),
+                    "x86_64" => os.contains("macos"),
+                    _ => false,
+                }
+            }).map(move |(id, _)| ((*id, prefix), format!("{}-{}", prefix, id)))
+        }).collect();
+
+    let combo_display: Vec<&str> = os_arch_options.iter().map(|(_, s)| s.as_str()).collect();
+
+    let arch_selection = MultiSelect::with_theme(&ColorfulTheme::default())
+        .with_prompt("Choose architecture(s)")
+        .items(&combo_display)
+        .interact()
+        .unwrap();
+
+    let chosen_arch_strings: Vec<String> = arch_selection.iter()
+        .map(|&i| os_arch_options[i].1.clone())
+        .collect();
+
+    // template
+    let template_selection = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("Choose a template")
         .default(0)
         .items(&templates)
         .interact()
         .unwrap();
 
-    let chosen_template = templates[selection];
+    let chosen_template = templates[template_selection];
 
     // project
     let project_name: String = Input::with_theme(&ColorfulTheme::default())
@@ -79,9 +138,17 @@ pub fn creator() {
         .interact_text()
         .unwrap();
 
+    // xcodegen
+    let xcodegen: bool = Confirm::with_theme(&ColorfulTheme::default())
+        .with_prompt("Would you like to generate an Xcode project?")
+        .interact()
+        .unwrap();
+
     match std::fs::create_dir(&project_name) {
         Ok(_) => {
             println!("Created {}", project_name);
+
+            // xcodegen logic DO_LATER
 
             let config_payload = YoruKitToml {
                 project: ProjectConfig {
@@ -93,7 +160,7 @@ pub fn creator() {
                 target: TargetConfig {
                     mode: "rootless".to_string(),
                     min_os: "15.0".to_string(),
-                    architectures: vec!["arm64".to_string(), "arm64e".to_string()],
+                    architectures: chosen_arch_strings,
                 },
                 signing: SigningConfig {
                     entitlements: "entitlements.plist".to_string(),

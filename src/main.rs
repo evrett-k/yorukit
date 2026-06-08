@@ -1,4 +1,6 @@
 mod creator;
+mod build;
+mod signing;
 
 fn main() {
     let args: Vec<String> =std::env::args().collect();
